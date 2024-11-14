@@ -6,7 +6,10 @@
   
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs",
+    "<all_urls>",
+    "scripting"
   ],
 
   "browser_action": {

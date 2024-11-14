@@ -1,3 +1,5 @@
+console.log('Auto Scroller content script loaded');
+
 let isScrolling = false;
 let scrollSpeed = 50;
 let speedIncrement = 10;
@@ -20,8 +22,24 @@ browser.storage.onChanged.addListener((changes) => {
 
 function scroll() {
   if (isScrolling) {
-    window.scrollBy(0, scrollSpeed / 60);
-    requestAnimationFrame(scroll);
+    try {
+      // Try multiple scroll methods
+      const scrollAmount = scrollSpeed / 60;
+      
+      if (document.documentElement.scrollTop !== undefined) {
+        document.documentElement.scrollTop += scrollAmount;
+      } else if (document.body.scrollTop !== undefined) {
+        document.body.scrollTop += scrollAmount;
+      } else {
+        window.scrollBy(0, scrollAmount);
+      }
+      
+      console.log('Scroll attempted, amount:', scrollAmount);
+      requestAnimationFrame(scroll);
+    } catch (e) {
+      console.error('Scroll error:', e);
+      isScrolling = false;
+    }
   }
 }
 
@@ -32,11 +50,16 @@ function updateScrollState(newState) {
 }
 
 // Listen for commands from background script
-browser.runtime.onMessage.addListener((message) => {
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Message received:', message);
   switch (message.command) {
     case 'toggle':
+      console.log('Toggle command received, current state:', isScrolling);
       updateScrollState(!isScrolling);
-      if (isScrolling) scroll();
+      if (isScrolling) {
+        console.log('Starting scroll');
+        scroll();
+      }
       break;
     case 'speedUp':
       scrollSpeed += speedIncrement;
@@ -54,15 +77,28 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Add event listener for the Alt+Up/Down controls
+// Add keyboard event listener
 document.addEventListener('keydown', (e) => {
+  console.log('Key pressed:', e.key, 'Alt:', e.altKey, 'Ctrl:', e.ctrlKey, 'Shift:', e.shiftKey);
+  
+  // Handle Alt+Up/Down
   if (e.altKey && !e.ctrlKey && !e.shiftKey) {
     if (e.key === 'ArrowUp') {
-      browser.runtime.sendMessage({type: "keypress", command: "speedUp"});
+      scrollSpeed += speedIncrement;
+      console.log('Speed increased to:', scrollSpeed);
       e.preventDefault();
     } else if (e.key === 'ArrowDown') {
-      browser.runtime.sendMessage({type: "keypress", command: "speedDown"});
+      scrollSpeed = Math.max(1, scrollSpeed - speedIncrement);
+      console.log('Speed decreased to:', scrollSpeed);
       e.preventDefault();
     }
+  }
+  
+  // Handle Ctrl+Shift+V
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'v') {
+    console.log('Toggle hotkey pressed');
+    updateScrollState(!isScrolling);
+    if (isScrolling) scroll();
+    e.preventDefault();
   }
 }); 
