@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Auto Scroller Plus</h2>
+      <button id="toggleButton" class="toggle-button">Start Scrolling</button>
+    </div>
+    <div class="setting">
+      <label>Scroll Speed (px/s):</label>
+      <input type="number" id="scrollSpeed" min="1" max="1000" value="50">
+    </div>
+    <div class="setting">
+      <label>Speed Increment:</label>
+      <input type="number" id="speedIncrement" min="1" max="100" value="10">
+    </div>
+    <div class="controls">
+      <p>Hotkeys:</p>
+      <ul>
+        <li>Toggle: Ctrl+Shift+V</li>
+        <li>Speed Up: Alt+Up</li>
+        <li>Speed Down: Alt+Down</li>
+      </ul>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
