@@ -32,5 +32,10 @@
       },
       "description": "Toggle auto-scroll"
     }
+  },
+
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
   }
 }

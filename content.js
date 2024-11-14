@@ -1,22 +1,63 @@
 console.log('Auto Scroller content script loaded');
 
 let isScrolling = false;
-let scrollSpeed = 50;
+let scrollSpeed = 60;
 let speedIncrement = 10;
+let hotkeyBindings = {
+  toggle: 'Ctrl+Shift+V',
+  speedUp: 'Alt+Up',
+  speedDown: 'Alt+Down'
+};
 
-// Load settings
-browser.storage.local.get(['scrollSpeed', 'speedIncrement']).then((result) => {
-  scrollSpeed = result.scrollSpeed || 50;
+// Load settings and hotkeys
+browser.storage.local.get([
+  'scrollSpeed', 
+  'speedIncrement',
+  'toggleHotkey',
+  'speedUpHotkey',
+  'speedDownHotkey'
+]).then((result) => {
+  scrollSpeed = result.scrollSpeed || 60;
   speedIncrement = result.speedIncrement || 10;
+  hotkeyBindings.toggle = result.toggleHotkey || 'Ctrl+Shift+V';
+  hotkeyBindings.speedUp = result.speedUpHotkey || 'Alt+Up';
+  hotkeyBindings.speedDown = result.speedDownHotkey || 'Alt+Down';
 });
 
-// Listen for storage changes
+// Listen for hotkey changes
 browser.storage.onChanged.addListener((changes) => {
-  if (changes.scrollSpeed) {
-    scrollSpeed = changes.scrollSpeed.newValue;
-  }
-  if (changes.speedIncrement) {
-    speedIncrement = changes.speedIncrement.newValue;
+  if (changes.toggleHotkey) hotkeyBindings.toggle = changes.toggleHotkey.newValue;
+  if (changes.speedUpHotkey) hotkeyBindings.speedUp = changes.speedUpHotkey.newValue;
+  if (changes.speedDownHotkey) hotkeyBindings.speedDown = changes.speedDownHotkey.newValue;
+  if (changes.scrollSpeed) scrollSpeed = changes.scrollSpeed.newValue;
+  if (changes.speedIncrement) speedIncrement = changes.speedIncrement.newValue;
+});
+
+// Convert hotkey string to key event match
+function matchHotkey(event, hotkeyStr) {
+  const keys = hotkeyStr.split('+');
+  const modifiers = {
+    'Ctrl': event.ctrlKey,
+    'Shift': event.shiftKey,
+    'Alt': event.altKey
+  };
+  
+  const mainKey = keys[keys.length - 1];
+  return keys.every(key => modifiers[key] === true || key === event.key);
+}
+
+// Keyboard event listener
+document.addEventListener('keydown', (e) => {
+  if (matchHotkey(e, hotkeyBindings.toggle)) {
+    updateScrollState(!isScrolling);
+    if (isScrolling) scroll();
+    e.preventDefault();
+  } else if (matchHotkey(e, hotkeyBindings.speedUp)) {
+    scrollSpeed += speedIncrement;
+    e.preventDefault();
+  } else if (matchHotkey(e, hotkeyBindings.speedDown)) {
+    scrollSpeed = Math.max(1, scrollSpeed - speedIncrement);
+    e.preventDefault();
   }
 });
 
@@ -76,29 +117,4 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ isScrolling });
   }
 });
-
-// Add keyboard event listener
-document.addEventListener('keydown', (e) => {
-  console.log('Key pressed:', e.key, 'Alt:', e.altKey, 'Ctrl:', e.ctrlKey, 'Shift:', e.shiftKey);
-  
-  // Handle Alt+Up/Down
-  if (e.altKey && !e.ctrlKey && !e.shiftKey) {
-    if (e.key === 'ArrowUp') {
-      scrollSpeed += speedIncrement;
-      console.log('Speed increased to:', scrollSpeed);
-      e.preventDefault();
-    } else if (e.key === 'ArrowDown') {
-      scrollSpeed = Math.max(1, scrollSpeed - speedIncrement);
-      console.log('Speed decreased to:', scrollSpeed);
-      e.preventDefault();
-    }
-  }
-  
-  // Handle Ctrl+Shift+V
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'v') {
-    console.log('Toggle hotkey pressed');
-    updateScrollState(!isScrolling);
-    if (isScrolling) scroll();
-    e.preventDefault();
-  }
-}); 
+ 
