@@ -21,4 +21,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       });
   }
+});
+
+// Add tab focus handling
+browser.tabs.onActivated.addListener(async (activeInfo) => {
+  const tab = await browser.tabs.get(activeInfo.tabId);
+  if (tab) {
+    browser.tabs.sendMessage(tab.id, {command: "checkScroll"})
+      .catch(err => console.error('Error checking scroll state:', err));
+  }
 }); 

@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const speedUpHotkey = document.getElementById('speedUpHotkey');
   const speedDownHotkey = document.getElementById('speedDownHotkey');
   const themeToggle = document.getElementById('themeToggle');
+  const progressToggle = document.getElementById('progressBar');
+  const positionToggle = document.getElementById('savePosition');
+  const patternSelect = document.getElementById('scrollPattern');
+  const steppedSettings = document.getElementById('steppedSettings');
+  const stepSize = document.getElementById('stepSize');
+  const pauseDuration = document.getElementById('pauseDuration');
   
   // Load saved settings
   browser.storage.local.get([
@@ -26,12 +32,35 @@ document.addEventListener('DOMContentLoaded', () => {
     speedDownHotkey.value = result.speedDownHotkey || 'Alt+Down';
   });
 
-  // Load theme preference
-  browser.storage.local.get('darkTheme').then((result) => {
-    if (result.darkTheme) {
-      document.body.setAttribute('data-theme', 'dark');
-      themeToggle.textContent = '☀️';
-    }
+  // Simplified theme toggle
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const currentTheme = document.body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', newTheme);
+    browser.storage.local.set({ theme: newTheme });
+  });
+
+  // Load saved theme
+  browser.storage.local.get('theme').then((result) => {
+    const savedTheme = result.theme || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+  });
+
+  // Load feature settings
+  browser.storage.local.get([
+    'progressBarEnabled',
+    'savePositionEnabled',
+    'scrollPattern'
+  ]).then((result) => {
+    progressToggle.checked = result.progressBarEnabled || false;
+    positionToggle.checked = result.savePositionEnabled || false;
+    patternSelect.value = result.scrollPattern || 'smooth';
+  });
+
+  // Load stepped scroll settings
+  browser.storage.local.get(['stepSize', 'pauseDuration']).then((result) => {
+    stepSize.value = result.stepSize || 100;
+    pauseDuration.value = result.pauseDuration || 500;
   });
 
   // Hotkey recording function
@@ -96,11 +125,31 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.storage.local.set({ speedIncrement: parseInt(incrementInput.value) });
   });
 
-  // Theme toggle handler
-  themeToggle.addEventListener('click', () => {
-    const isDark = document.body.getAttribute('data-theme') === 'dark';
-    document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    themeToggle.textContent = isDark ? '🌓' : '☀️';
-    browser.storage.local.set({ darkTheme: !isDark });
+  // Feature toggle handlers
+  progressToggle.addEventListener('change', () => {
+    browser.storage.local.set({ progressBarEnabled: progressToggle.checked });
+  });
+
+  positionToggle.addEventListener('change', () => {
+    browser.storage.local.set({ savePositionEnabled: positionToggle.checked });
+  });
+
+  patternSelect.addEventListener('change', () => {
+    browser.storage.local.set({ scrollPattern: patternSelect.value });
+  });
+
+  // Show/hide stepped settings based on pattern selection
+  scrollPattern.addEventListener('change', () => {
+    steppedSettings.classList.toggle('visible', scrollPattern.value === 'stepped');
+    browser.storage.local.set({ scrollPattern: scrollPattern.value });
+  });
+
+  // Save stepped settings when changed
+  stepSize.addEventListener('change', () => {
+    browser.storage.local.set({ stepSize: parseInt(stepSize.value) });
+  });
+
+  pauseDuration.addEventListener('change', () => {
+    browser.storage.local.set({ pauseDuration: parseInt(pauseDuration.value) });
   });
 }); 
